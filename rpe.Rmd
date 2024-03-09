@@ -1,0 +1,1577 @@
+---
+title: "RPE"
+author: "Jae Min Jung"
+date: "2023-06-09: updated on `r Sys.Date()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+    highlight: espresso
+    theme: journal
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Library package
+
+* Short cut for code chunk: ctrl + alt + i
+* To execute command: ctl + enter
+* pipe operator: ctl + shift + M
+
+```{r}
+require(tidyverse)
+require(haven)
+require(labelled)
+require(sjlabelled)
+require(sjPlot)
+require(janitor)
+require(naniar)
+require(car)
+```
+
+
+# Data setup
+
+```{r}
+
+df <- read_sav("Research+Participation+Experience+Survey-Fall+2021_June+8,+2023_19.26.sav")
+view(df)
+
+dim(df)
+head(df)
+glimpse(df)
+```
+
+# Data cleaning
+
+```{r}
+df <- df |> clean_names()
+
+names(df)
+
+head(df) 
+view_df(df)
+
+df <- df |> 
+  #select(q2_3) |> 
+  rename(att_check = q2_3)
+  
+df |> 
+  count(att_check)
+
+df |> 
+  count(att_check) |> 
+  mutate(percent = n/sum(n)) # how to round it up?
+
+
+df <- df |> 
+  filter(att_check == 4)
+
+df
+
+df |> count(q1_1)
+
+df |> count(q2_2_1)
+
+df |> count(q2_2_2)
+
+df |> count(q2_2_5)
+
+df |> count(q2_2_6)
+
+df %>% count(q2_2_3)
+
+# renaming variables
+
+df <- df |> 
+  rename(class_ong_online = q2_2_1, 
+         class_ong_mw = q2_2_2,
+         class_jung_online = q2_2_5,
+         class_hossain = q2_2_6,
+         incent_required = q2_4_1,
+         incent_extra = q2_4_2,
+         college = q2_5,
+         major = q2_6,
+         studies = q2_7,
+         mr_chapter = q2_8,
+         rel_val = q2_9,
+         like_mr_ch_ot_ch = q2_11,
+         like_rp_mr_ch = q2_12,
+         help_unst_mr_ch = q2_13,
+         help_gain_know_g_mr = q2_14,
+         help_unst_mktg_gen = q2_15,
+         at_rp_bad_good = q5_2,
+         at_rp_neg_pos = q5_3,
+         at_rp_boring_fun = q5_4,
+         at_rp_useless_ful = q5_5,
+         val_not_worth_time = q5_6,
+         val_not_worth_eff = q5_7,
+         val_bus_majors = q5_8,
+         val_non_bus_majors = q5_9,
+         rp_limited_to_mkt = q5_10,
+         part_intention_5_sd = q5_11,
+         credit_earned = q3_2,
+         study_type = q3_3,
+         rp_motive = q3_4,
+         studies_sincerity = q3_5,
+         studies_interest = q3_6,
+         studies_qual_b_g = q3_7,
+         studies_qual_lo_hi = q3_8,
+         help_unst_mr_better = q4_3,
+         help_unst_mkt_con = q4_4,
+         learned_mkt = q4_5,
+         enhanced_know_mkt = q4_6,
+         sat_brp_enrol = q6_2,
+         sat_brp_navi = q6_3,
+         sat_brp_auto_email = q6_4,
+         att_brp_ifc = q6_5,
+         sat_brp_qna_sona = q6_6,
+         sat_app_time_conv = q6_7,
+         s_tech_rt_24 = q7_2,
+         s_tech_rt_rea = q7_3,
+         s_tech_helpful = q7_4,
+         s_tech_courteous = q7_5,
+         s_tech_resp_sat = q7_6,
+         s_tech_resp_rea = q7_7,
+         s_tech_overal_sat = q7_8,
+         ov_rp_good_exp = q11_2,
+         ov_rp_pos_ex = q11_3,
+         ov_rp_gr_valu = q11_4,
+         int_rp_recomend = q11_5,
+         int_rp_likely = q11_6,
+         gender = q12_2,
+         age = q12_3,
+         cntry_born = q12_4,
+         cntry_gru_14 = q12_5,
+         yrs_lvd_us = q12_6,
+         race_eth = q12_7,
+         culture = q12_8,
+         hrs_work_wk = q12_9,
+         days_camp_wk = q12_10,
+         gpa_cpp = q12_11)
+
+names(df)
+
+# Expected Grade in courses from which they are
+
+df %>% select(contains("q2_10")) 
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_1))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_2))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_3))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_4))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_5))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_6))
+
+df %>% 
+  select(contains("q2_10")) %>% 
+  filter(!is.na(q2_10_6_text))
+
+df <- df |> 
+  mutate(exp_grade_course = case_when(q2_10_1 %in% c(1, 2, 3, 4, 5) ~ q2_10_1,
+                                      q2_10_2 %in% c(1, 2, 3, 4, 5) ~ q2_10_2,
+                                      q2_10_3 %in% c(1, 2, 3, 4, 5) ~ q2_10_3,
+                                      q2_10_4 %in% c(1, 2, 3, 4, 5) ~ q2_10_4,
+                                      q2_10_5 %in% c(1, 2, 3, 4, 5) ~ q2_10_5)) 
+
+df %>% 
+  count(exp_grade_course)
+
+
+df |> 
+  count(incent_required)
+
+df |> 
+  count(incent_extra) 
+
+df |> 
+  select(incent_required, incent_extra) %>% view()
+
+# cross-tabulation
+df |> 
+  group_by(incent_required) |> 
+  count(incent_extra) 
+```
+
+# Data cleaning #2
+
+```{r}
+#install.packages("kableExtra")
+library(kableExtra)
+
+df |> 
+  group_by(incent_required, incent_extra) |> 
+  tally() |> 
+  ungroup() |> 
+  mutate(percent = n/sum(n)) |> 
+  kbl(caption = "Required Credits by Extra Credit") |> 
+  kable_classic(full_width = F, html_font = "Cambria")
+  
+# Participation in the research(s) helped me understand how a good marketing 
+# research should be done. Strongly Disagree
+
+view_df(df)
+
+df <- df |> 
+  mutate(help_unst_g_mr_condt = case_when(q4_2_1 == 1 ~ 1,
+                                          q4_2_2 == 1 ~ 2,
+                                          q4_2_3 == 1 ~ 3,
+                                          q4_2_4 == 1 ~ 4,
+                                          q4_2_5 == 1 ~ 5,
+                                          q4_2_6 == 1 ~ 6,
+                                          q4_2_7 == 1 ~ 7)) 
+# confirm
+df |> count(help_unst_g_mr_condt)
+
+df |> summary()
+
+```
+
+# Research questions submitted by RA's
+* One student's interest
+  1. what factors contribute to employee job satisfaction to a specific organization in the dataset? (X)
+  2. Is there a correlation between customers' satisfaction levels and their likelihood of making repeat purchases? (O)
+  3. Are there any relationships between the participants' education levels and their income or job satisfaction? (~)
+* “How does the students’ level of interest and sincerity in participating in research studies relate to their expected final grade, major, and the number of studies they have previously participated in?” (0)
+* Would students be willing to participate in research if there were no incentives offered? (~)
+* Are students willing to put more time in research if the topic is interesting to them or if it is required for credits? (~)
+
+# Investigation of Research Questions 
+
+# RQ 1. Willinness to participate and *interest* vs. *required*?  (**Jae Jung**)
+  5. Are students willing to put more time in research if the topic is interesting to them or if it is required for credits? (~)
+  
+* Are students more willing to participate again in research if the topic is interesting to them or if it is required for credits? (~)
+  + interest (I.V.)
+    + studies_interest = q3_6: "How interested were you in participating in the studies?" (a 5-point likeer type scale)
+  + incentive type (I.V.)
+    + incent_required, incent_extra
+  + Participation intention (D.v.)
+    + part_intention_sd = q5_11: "How likely is it that you participate in research studies next time you are given a chance?"
+    + int_rp_likely = Q11_6: "I am likely to participate again in research studies when given a chance."
+    + int_rp_recomend = Q11_5: "I would strongly recommend research participation to other students.'
+ 
+
+## Exploratory Analysis
+
+* *Findings:*
+
+
+### Interest (IV)
+
+```{r}
+df |> count(studies_interest)
+df %>% 
+  select(studies_interest) %>% 
+  var_label()
+df %>% 
+  select(studies_interest) %>% 
+  labelled::val_labels()
+
+```
+
+### Incentive type (IV)
+```{r}
+df %>% count(incent_required)
+df %>% count(q2_4_4_text)
+
+df %>% 
+  group_by(incent_required) %>% 
+  count(incent_extra)
+
+# new variable
+df <- df %>% 
+  mutate(incent_type = case_when(incent_required == 1 & is.na(incent_extra) ~ 1,
+                                 incent_extra == 1 & is.na(incent_required) ~ 2,
+                                 TRUE                                       ~ 3))
+# confirm
+df %>% count(incent_type)
+
+df <- df %>% 
+  set_value_labels(incent_type = c(required = 1,
+                                   extra = 2,
+                                   both = 3))
+
+df %>% count(incent_type)
+```
+
+**Code club #11**
+
+
+### Participation Intention
+* q5_11: part_intention_5_sd
+  + "How likely is it that you participate in research studies next time you are given a chance?"
+  + # 5-point semantic differential scale
+
+```{r}
+
+df %>% count(part_intention_5_sd)
+df %>% select(part_intention_5_sd) %>% 
+  var_label()
+df %>% select(part_intention_5_sd) %>% 
+  labelled::val_labels()
+
+```
+
+
+* q11_6: 
+  + int_rp_likely: "I am likely to participate again in research studies when given a chance."
+  + 7-point Likert-type scale
+
+```{r}
+# participation intention
+df %>% 
+  count(int_rp_likely)
+
+df %>% 
+  select(int_rp_likely) %>% 
+  var_label()
+
+# clean var
+df <- df %>% 
+  mutate(part_intention_lt = ifelse(int_rp_likely == 8, NA, int_rp_likely)) %>%
+  var_labels(part_intention_lt = "I am likely to participate again in research studies when given a chance") %>% 
+  set_value_labels(part_intention_lt = c("Strongly Disagree" = 1,
+                                         "Disagree" = 2,
+                                         "Somewhat disagree" = 3,
+                                         "Neither agree nor disagree" = 4,
+                                         "Agree" = 5,
+                                         "Somewhat agree" = 6,
+                                         "Strngly Agree" = 7))
+
+#confirm
+df %>% count(part_intention_lt)
+var_label(df$part_intention_lt)
+labelled::val_labels(df$part_intention_lt)
+
+```
+
+
+* q11_5: int_rp_recomend
+  + I would strongly recommend research participation to other students.
+  
+```{r}
+df %>% 
+  count(int_rp_recomend)
+```
+
+
+### Correlation
+
+```{r}
+library(GGally)
+
+df %>% 
+  select(part_intention_5_sd, part_intention_lt, int_rp_recomend) %>% 
+  ggpairs() +
+  labs(title = "Correlation between the three participation intention items",
+       subtitle = "5_11, Q11_5, Q11_6")+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+**Code club #12 (9/22/2023)**
+
+### participation intention by interest in studies  
+  
+```{r}
+df %>% count(part_intention_lt)
+df %>% count(studies_interest)
+
+# change labelled data to a factor
+# faceted bar chart
+df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(part_intention_lt = haven::as_factor(part_intention_lt)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  ggplot(aes(part_intention_lt, fill = studies_interest)) +
+  geom_bar() +
+  facet_wrap(~studies_interest) +
+  theme(legend.position = "none")
+
+# stacked bar chart: hard to interpret
+df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(part_intention_lt = haven::as_factor(part_intention_lt)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  ggplot(aes(part_intention_lt, fill = studies_interest)) +
+  geom_bar() +
+  #facet_wrap(~studies_interest) +
+  theme(legend.position = "none")
+```
+
+* note only
+
+```{r, eval=FALSE}
+# doesn't work
+df %>% 
+  ggplot(aes(part_intention_lt, fill = studies_interest)) +
+  geom_bar() +
+  facet_wrap(~studies_interest) +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+df %>% count(part_intention_5_sd)
+
+df %>% 
+  filter(!is.na(part_intention_5_sd)) %>% 
+  mutate(part_intention_5_sd = haven::as_factor(part_intention_5_sd)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  ggplot(aes(part_intention_5_sd, fill = studies_interest)) +
+  geom_bar() +
+  facet_wrap(~studies_interest) +
+  theme(legend.position = "none")
+```
+
+```{r}
+df %>% count(int_rp_recomend)
+
+df %>% 
+  filter(!is.na(int_rp_recomend)) %>% 
+  mutate(int_rp_recomend = haven::as_factor(int_rp_recomend)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  ggplot(aes(int_rp_recomend, fill = studies_interest)) +
+  geom_bar() +
+  facet_wrap(~studies_interest) +
+  theme(legend.position = "none")
+```
+
+* Conclusion: Interest in studies tends to be positively associated with study participation intentions (with all three items of participation intentions).  
+
+**Code Club #13 (9/29/2023)**
+* We refined research questions.
+
+**Code Club #14 (10/6/2023)**
+
+### participation intentions by type of incentives.
+
+-   part_intention_lt
+
+```{r}
+df %>% count(part_intention_lt)
+df %>% count(incent_type)
+
+# bar chart
+df %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(part_intention_lt = haven::as_factor(part_intention_lt),
+         incent_type = haven::as_factor(incent_type)) %>% 
+  ggplot(aes(part_intention_lt, fill = incent_type)) +
+  geom_bar() +
+  facet_wrap(~ incent_type)+
+  theme(legend.position = "none")
+
+# means and sd's
+df %>% 
+  select(incent_type, part_intention_lt) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_lt)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(part_intention_lt),
+            sd = sd(part_intention_lt))
+```
+
+*Code Club #16 (10/27/2023)*
+- spent first half of two hour session on presentation
+- spent the second half of the session on coding
+
+```{r}
+#boxplot
+df %>% 
+  select(incent_type, part_intention_lt) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_lt)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  ggplot(aes(incent_type, part_intention_lt, fill = incent_type)) +
+  geom_boxplot() +
+  theme(legend.position = "none")
+```
+
+Conclusion: Based on barplot and boxplot as well as comparision of the means, incentive type does appear to make an impact on participants' intention to participate in research studies in the future.
+
+-   part_intention_5_sd
+
+```{r}
+# bar chart
+df %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_5_sd)) %>% 
+  mutate(part_intention_5_sd = haven::as_factor(part_intention_5_sd),
+         incent_type = haven::as_factor(incent_type)) %>% 
+  ggplot(aes(part_intention_5_sd, fill = incent_type)) +
+  geom_bar() +
+  facet_wrap(~ incent_type)+
+  theme(legend.position = "none")
+
+# means and sd's
+df %>% 
+  select(incent_type, part_intention_5_sd) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_5_sd)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(part_intention_5_sd),
+            sd = sd(part_intention_5_sd))
+
+#boxplot
+df %>% 
+  select(incent_type, part_intention_5_sd) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_5_sd)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  ggplot(aes(incent_type, part_intention_5_sd, fill = incent_type)) +
+  geom_boxplot() +
+  theme(legend.position = "none")
+```
+Conclusion: Based on the three operations above, there doesn't seem to be much differences in participation intention measured with part_intention_5_sd between the two incentive types.  
+
+-   int_rp_recomend
+
+```{r}
+# bar chart
+df %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(int_rp_recomend)) %>% 
+  mutate(int_rp_recomend = haven::as_factor(int_rp_recomend),
+         incent_type = haven::as_factor(incent_type)) %>% 
+  ggplot(aes(int_rp_recomend, fill = incent_type)) +
+  geom_bar() +
+  facet_wrap(~ incent_type)+
+  theme(legend.position = "none")
+
+# means and sd's
+df %>% 
+  select(incent_type, int_rp_recomend) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(int_rp_recomend)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(int_rp_recomend),
+            sd = sd(int_rp_recomend))
+
+#boxplot
+df %>% 
+  select(incent_type, int_rp_recomend) %>% 
+  filter(incent_type != 3) %>% 
+  filter(!is.na(int_rp_recomend)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  ggplot(aes(incent_type, int_rp_recomend, fill = incent_type)) +
+  geom_boxplot() +
+  theme(legend.position = "none")
+```
+
+### comparision of means for all three incentive types
+```{r}
+# means and sd's
+df %>% 
+  select(incent_type, part_intention_lt) %>% 
+ # filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_lt)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(part_intention_lt),
+            sd = sd(part_intention_lt))
+
+df %>% 
+  select(incent_type, part_intention_5_sd) %>% 
+ # filter(incent_type != 3) %>% 
+  filter(!is.na(part_intention_5_sd)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(part_intention_5_sd),
+            sd = sd(part_intention_5_sd))
+
+# means and sd's
+df %>% 
+  select(incent_type, int_rp_recomend) %>% 
+ # filter(incent_type != 3) %>% 
+  filter(!is.na(int_rp_recomend)) %>%   
+  mutate(incent_type = haven::as_factor(incent_type)) %>%
+  group_by(incent_type) %>% 
+  summarize(count = n(),
+            mean = mean(int_rp_recomend),
+            sd = sd(int_rp_recomend))
+```
+
+
+- Conclusion: Again, research participation intention measured by int_rp_recomend doesnt' seem to be much different between the two incentive type groups.
+- Based on the relationship between the incentive types and the three dependent variables explored above, we can tentatively conclude that incentive type doesn't matter in students' intention to participation in the future.
+
+*Code Club #17 (11/17/2023)*
+
+### participation intentions by credit earned
+* credit_earned
+* part_intention_lt
+
+```{r}
+df %>% count(credit_earned)
+df %>% count(part_intention_lt)
+
+# barplot with percentages
+df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(credit_earned = haven::as_factor(credit_earned),
+         part_intention_lt = haven::as_factor(part_intention_lt)) %>% 
+  group_by(credit_earned) %>% 
+  count(part_intention_lt) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(part_intention_lt, percent, fill = credit_earned)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent_format()) +
+  facet_wrap(~ credit_earned) +
+  theme(legend.position = "none")
+
+# barplot
+p <- df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(credit_earned = haven::as_factor(credit_earned)) %>% 
+  ggplot(aes(credit_earned, part_intention_lt, fill = credit_earned)) 
+
+p +
+  geom_bar(stat = "summary", fun = "mean") +
+  theme(legend.position = "none")
+
+# stat_summary()  
+p +
+  stat_summary(fun = "mean", geom = "bar") +
+  theme(legend.position = "none")
+
+# Connected scatterplot using stat_summary
+p + 
+  stat_summary(fun = "mean", size = 3, color = "red", alpha = 0.3, geom = "point") +
+  stat_summary(fun = "mean", color = "black", geom = "line", aes(group = 1)) +
+  theme(legend.position = "none") +
+  labs(x = "Credits Earned",
+       y = "Participation Intentions",
+       title = "Participation Intentions by Credit Earned")
+
+```
+
+* conclusion
+  * Participation intentions tend to be lower at either the top or the bottom of the sona credit earned.
+  * When they earned medium range of sona credits, their intentions about the same at higher end.
+
+### Applying stat_summary to the chart for *the intentions by studies interest*
+
+```{r}
+# Using average participation intentions
+# Using geom_col with mean value
+df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  group_by(studies_interest) %>% 
+  summarize(mean = mean(part_intention_lt)) %>% 
+  ggplot(aes(studies_interest, mean, fill = studies_interest)) +
+  geom_col() +
+  theme(legend.position = "none")
+
+# stat_summary
+df %>% 
+  filter(!is.na(part_intention_lt)) %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  ggplot(aes(studies_interest, part_intention_lt, fill = studies_interest)) +
+  stat_summary(fun = "mean", geom = "bar") +
+  theme(legend.position = "none") +
+  labs(x = "Interest in Studies",
+       y = "Mean value of Participation Intentions",
+       title = "Impact of interest in studies on participation intentions",
+       caption = "Note: Participation intentions were \noperationalized with part_intention_lt, which was measured on 1-7 pont scale")
+
+```
+
+*End of Code club*
+
+
+*Code Club #18 (12/1/2023)*
+
+## Statistical Inference
+
+### Correlations
+
+```{r}
+#install.packages("GGally")
+library(GGally)
+
+# Treating incent_type as continuous var
+df %>% 
+  select(part_intention_5_sd, part_intention_lt, int_rp_recomend,
+         studies_interest, incent_type) %>% 
+  filter(incent_type != 3) %>% 
+  ggpairs() +
+  labs(title = "Correlations among IV's and DV's",
+       subtitle = "2 IV's and 3 DV's") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+# Treating incent_type as categorical var.
+
+df_rq1 <- df %>% 
+  select(part_intention_5_sd, part_intention_lt, int_rp_recomend,
+         studies_interest, incent_type) %>% 
+  filter(incent_type != 3) %>% 
+  mutate(incent_type = haven::as_factor(incent_type))
+
+df_rq1 %>% 
+  ggpairs() +
+  labs(title = "Correlations among IV's and DV's",
+       subtitle = "with Incentive type treated as a factor") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+* Conclusion: While incentive type is not related to the participation intentions, interest in studies is positively related to participation intentions. 
+ 
+ 
+### Regression 
+
+* used when dv is continuous while iv is either coninuous or categorical 
+* Linear regression modeling: <https://jhudatascience.org/tidyversecourse/model.html#multiple-linear-regression>
+
+-   **Regressing part_intention_lt on iv's**
+
+```{r}
+fit_reg <- df_rq1 %>% 
+  lm(part_intention_lt ~ studies_interest + incent_type, data = .) 
+
+# test of assumptions of regression
+par(mfrow = c(2,2))
+plot(fit_reg)
+
+## test of normality of residuals
+fit_reg %>% 
+  ggplot(aes(fit_reg$residuals)) +
+  geom_histogram()
+
+# interpreting model
+summary(fit_reg)
+confint(fit_reg)
+
+```
+
+-   **Regressing part_intention_5_sd on iv's**
+```{r}
+fit_reg_sd <- df_rq1 %>% 
+  lm(part_intention_5_sd ~ studies_interest + incent_type, data = .)
+
+# test of assumptions of regression
+par(mfrow = c(2,2))
+plot(fit_reg_sd)
+
+## test of normality of residuals
+fit_reg_sd %>% 
+  ggplot(aes(fit_reg_sd$residuals)) +
+  geom_histogram()
+
+# interpreting model
+summary(fit_reg_sd)
+confint(fit_reg_sd)
+```
+
+-   **Regressing int_rp_recomend on iv's** (*Assigned*)
+```{r}
+fit_reg_recom <- df_rq1 %>% 
+  lm(int_rp_recomend  ~ studies_interest + incent_type, data = .)
+
+# test of assumptions of regression
+par(mfrow = c(2,2))
+plot(fit_reg_recom)
+
+## normality of residuals
+fit_reg_recom |> 
+  ggplot(aes(fit_reg_recom$residuals)) +
+  geom_histogram()
+
+# interpreting model
+summary(fit_reg_recom)
+confint(fit_reg_recom)
+
+# organize with tidy()
+library(broom)
+tidy(fit_reg_recom)
+```
+* Conclusion
+  + Regression analysis corroborate the findings from the correlations in that while the impact of incentive types are not different on participation intentions, the impact of interest in the studies on the participation intentions are significantly positive.
+
+*Code Club #19 (12/8/2023)*
+
+### Three groups, One-way ANOVA
+
+-   When to use ANOVA?
+  + When IV's are groups (or categories), either two or more.
+      + When there are only two groups, then the analysis will be identical to the two independent samples t-test
+  + When DV is continuous
+  
+-   Impact of incentive type on participation Intentions
+
+-   incent_type: 3 groups
+
+-   Assumptions
+
+    -  independence of groups
+    -  DV should be normally distributed
+    -  There should be no spurious outliners
+    -  Homogeneity of variance in groups.
+
+#### 1. Data setup
+
+```{r}
+df_incent3 <- df %>% 
+  select(part_intention_lt, part_intention_5_sd, 
+         int_rp_recomend, incent_type) %>% 
+  mutate(incent_type = haven::as_factor(incent_type))
+```
+
+#### 2. Test of Homogneity of Variance (Levene Test)
+
+```{r}
+#install.packages("car")
+library(car)
+
+df_incent3 %>% 
+  lm(part_intention_lt ~ incent_type, data = .) %>% 
+  leveneTest(center = mean)
+```
+
+#### 3. anova under homogeneity of vairance not assumed
+
+```{r}
+# Welch's Test when equal variance is not assumed
+df_incent3 %>% 
+  oneway.test(part_intention_lt ~ incent_type, data = .)
+```
+
+#### 4. Post-hoc tests (multiple comparisons) under unequal group variances
+
+```{r}
+#install.packages("rstatix")
+library(rstatix) 
+
+df_incent3 %>% 
+  games_howell_test(part_intention_lt ~ incent_type,
+                    conf.level = 0.95, detailed = FALSE,
+                    data = .)
+```
+
+
+### ANOVA with the other DV's
+
+#### part_intention_5_sd
+
+```{r}
+# Levene's test
+df_incent3 %>% 
+  lm(part_intention_5_sd ~ incent_type, data = .) %>% 
+  leveneTest(center = mean) # p < 0.05 --> group variances are not the same
+
+# anova under equal variances assumed
+# H0: group means are the same
+df_incent3 %>% 
+  aov(part_intention_5_sd ~ incent_type, data = .) %>% 
+  summary()# resuls: failed to reject H0. Then you don't need multiple comparions
+
+# Post Hoc analysis under equal variances assumed
+#If there are significant group differences, do the multiple comparisions
+df_incent3 %>% 
+  aov(part_intention_5_sd ~ incent_type, data = .) %>% 
+  TukeyHSD()
+```
+
+#### int_rp_recomend (*Assigned*)
+
+```{r}
+
+```
+
+
+### Two group ANOVA: incent_type: 2 groups
+-   When there are two groups, ANOVA result would be the same as independent samples t-test.
+-   No need for multiple comparisons
+
+#### part_intention_lt
+
+```{r}
+#1. test of homogeneous variances among groups
+#H0: group variances are the same 
+df_rq1 %>% 
+  aov(part_intention_lt ~ incent_type, data = .) %>% 
+  leveneTest()
+
+#2. Test of group means under the homogeneous group variances
+df_rq1 %>% 
+  aov(part_intention_lt ~ incent_type, data = .) %>% 
+  summary()
+```
+
+#### part_intention_5_sd (*Assigned*)
+
+```{r}
+
+```
+
+#### int_rp_recomend (*Assigned*)
+
+```{r}
+
+```
+
+### Non-parametric test
+
+* Use when DV is not continuous (nominal, ordinal)
+
+```{r}
+# Kruskal-Wallis rank sum test when DV is ordinal
+df_incent3 %>% 
+  kruskal.test(int_rp_recomend ~ incent_type, data = .)
+```
+
+
+### Independent samples T-test
+
+#### part_intention_lt 
+
+```{r}
+# 1. Test of homogeneity of group variances
+df_rq1 %>% 
+  var.test(part_intention_lt ~ incent_type, data = .)
+
+# 2. Test of group means under homogenous group variances
+# Pooled t-test
+
+df_rq1 %>% 
+  t.test(part_intention_lt ~ incent_type, data = ., var.equal = TRUE)
+
+# 2. Test of group means under heterogeneous group variances
+# Use Welch's two sample t-test
+
+df_rq1 %>% 
+  t.test(part_intention_lt ~ incent_type, data = .)
+
+```
+
+#### part_intention_5_sd (*Assigned*)
+```{r}
+
+```
+
+#### int_rp_recomend (*Assigned*)
+```{r}
+
+```
+
+### Reliability with Chronbach's alpha
+```{r}
+#install.packages("psych")
+library(psych)
+
+# Chronbach's alpha
+# scale is reliable if alpha > .7
+df_incent3 %>% 
+  select(contains("int")) %>% 
+  alpha()
+```
+
+### Creating a composite scale
+
+* Using a composite scale is better than individual question items
+
+```{r}
+df_incent3 %>% 
+  select(contains("int")) %>% 
+  skimr::skim()
+
+df_incent3 %>% 
+  select(contains("int")) %>% 
+  summary()
+
+df_incent3 %>% count(part_intention_lt)
+df_incent3 %>% count(int_rp_recomend)
+df_incent3 %>% count(part_intention_5_sd)
+
+# transform a 7-point Likert type scale to 5-pont Liker type scale.
+
+df <- df %>% 
+  mutate(part_intention_lt_rs = part_intention_lt * (5/7),
+         int_rp_recomend_rs = int_rp_recomend * (5/7))
+df %>% 
+  select(part_intention_lt_rs, part_intention_5_sd, 
+         int_rp_recomend_rs) %>% 
+  alpha()
+
+# Alternative: Transform a 5-point scale to 7-point scale.
+
+df <- df %>% 
+  mutate(part_intention_5_sd_rs = part_intention_5_sd * (7/5))
+
+df %>% 
+  select(part_intention_lt, part_intention_5_sd_rs, 
+         int_rp_recomend) %>% 
+  #summary()
+  alpha()
+
+# Create a composite scale
+df <- df %>% 
+  mutate(part_intentions_3 = (part_intention_lt_rs +
+                              part_intention_5_sd +
+                              int_rp_recomend_rs) / 3)
+
+df %>% 
+  select(ends_with("_rs") | ends_with("_sd"), part_intentions_3)
+  
+df %>% select(part_intentions_3) %>% summary()
+
+```
+
+*Code Club #20 (12/8/2023)* (Optional Work: Bonus)
+
+### Regressing the composite scale
+
+```{r}
+df %>% 
+  mutate(incent_type = haven::as_factor(incent_type)) %>% 
+  lm(part_intentions_3 ~ studies_interest + incent_type, data = .) %>% 
+  summary()
+
+regfit_comp <- df %>% 
+  mutate(incent_type = haven::as_factor(incent_type)) %>% 
+  lm(part_intentions_3 ~ studies_interest + incent_type, data = .)
+
+summary(regfit_comp)
+
+# Test of assumptions of regression
+plot(regfit_comp)
+
+# normality of residuals
+regfit_comp %>% 
+  ggplot(aes(regfit_comp$residuals)) +
+  geom_histogram()
+## another way
+  ggplot(data = regfit_comp, aes(regfit_comp$residuals)) +
+  geom_histogram()
+```
+
+
+### ANOVA of composite scale
+
+#### Impact of incentive type
+
+```{r}
+#1. Test of homogeneity of group variances
+
+df %>% 
+  mutate(incent_type = haven::as_factor(incent_type)) %>% 
+  #lm(part_intentions_3 ~ incent_type, data = .) %>% 
+  aov(part_intentions_3 ~ incent_type, data = .) %>% 
+  leveneTest()
+
+#2. Test of group means under equal variances not assumed
+# H0: three group means are the same
+df %>% 
+  mutate(incent_type = haven::as_factor(incent_type)) %>% 
+  oneway.test(part_intentions_3 ~ incent_type, data = .)
+
+# Post-Hoc Analysis (Multple comparisions)
+library(rstatix)
+df %>% 
+  mutate(incent_type = haven::as_factor(incent_type)) %>% 
+  games_howell_test(part_intentions_3 ~ incent_type, 
+                    conf.level = 0.95, detailed = FALSE,
+                    data = .)
+```
+* Conclusion:
+  + Just as in the three seperate one-way ANOVA's, we reach the same conclusions wth the composite scale as dependent variables.
+  + That is, all group means are the same.
+
+
+#### Impact of studies interest (factor) (*Assignment*)
+```{r}
+# 1. Test of homogeneity of variance
+df %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  #count(studies_interest)
+  aov(part_intentions_3 ~ studies_interest, data = .) %>% 
+  leveneTest()
+
+# 2. Test of group means under unequal variances
+df %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  oneway.test(part_intentions_3 ~ studies_interest, data = .)
+
+# 3. Post-Hoc Analysis (Multiple comparisions)
+df %>% 
+  mutate(studies_interest = haven::as_factor(studies_interest)) %>% 
+  games_howell_test(part_intentions_3 ~ studies_interest, 
+                    conf.level = 0.95, detailed = FALSE,
+                    data = .)
+```
+
+
+### Multiple Regression with additonal IV's
+* IV's
+  - incent_type
+  - studies_interest
+  - rp_motive
+  - help_unst_g_mr_condt
+  - gender
+  
+```{r}
+df %>% count(rp_motive)
+df %>% count(help_unst_g_mr_condt)
+df %>% count(gender)
+
+fit_reg_mul <- df %>% 
+  mutate(incent_type = haven::as_factor(incent_type),
+          rp_motive = haven::as_factor(rp_motive),
+          gender = haven::as_factor(gender)) %>% 
+  lm(part_intentions_3 ~ incent_type + studies_interest +
+     rp_motive + help_unst_g_mr_condt + gender,
+     data = .)
+
+# test of regression model assumptions
+plot(fit_reg_mul)
+
+# summary of the model
+summary(fit_reg_mul)
+confint(fit_reg_mul)  
+
+# multicollinearity 
+# VIF > 10 --> there is multicollinearity issue, which means that IV's are highly correlated.
+library(car)
+vif(fit_reg_mul)
+
+library(broom)
+tidy(fit_reg_mul, conf.int = TRUE)
+```
+
+### Binary Logistical Regression
+
+* used when dv is categorical while iv is either continuous or categorical
+* odds
+* odds ratio
+* log(odds)
+
+#### Data setup
+
+```{r}
+df %>% count(part_intentions_3) %>% tail()
+
+# median
+df %>% 
+  summarize(part_intentions_median = median(part_intentions_3)) %>% 
+  pull(part_intentions_median) # median = 4.19
+
+# median split
+df_logit <- df %>% #count(part_intentions_3)
+  filter(!is.na(part_intentions_3)) %>% 
+  mutate(part_intentions_3_di = 
+           case_when(part_intentions_3 < 4.19 ~ 0,
+                     part_intentions_3 > 4.19 ~ 1))
+df_logit %>% count(part_intentions_3_di) 
+xtabs( ~ part_intentions_3_di + gender, data = df_logit)
+
+# alternatively
+df_logit %>% 
+  xtabs(~ part_intentions_3_di + gender, data = .)
+
+```
+
+#### Model running
+
+* Data Analysis in Medicine and Health using R: <https://bookdown.org/drki_musa/dataanalysis/binary-logistic-regression.html>  
+
+* glm(): LN(p/(1-p)) = b0 + b1*x1
+
+```{r}
+# visualization
+df_logit %>% 
+  ggplot(aes(studies_interest, part_intentions_3_di)) +
+  geom_jitter(height = .05, alpha = .5)
+
+# binary logistic regression
+binomial <- df_logit %>% 
+  glm(part_intentions_3_di ~ studies_interest,
+      data = .,
+      family = "binomial") 
+
+summary(binomial)
+confint(binomial)
+
+log_odds <- tidy(binomial, conf.int = TRUE)
+log_odds
+
+# probabilities of y given x = 4, 5
+df_logit %>% 
+  select(studies_interest)
+
+# LN(p/(1-p)) = b0 + b1*x1
+# LN(p/(1-p)) = -5.9685 + 1.7020*x1
+log_odds_4 = -5.9685 + 1.7020*4
+log_odds_5 = -5.9685 + 1.7020*5
+
+# P(y=1) = 1/(1 + exp(-log_odds))
+prob_int_4 = 1/(1 + exp(-log_odds_4))
+prob_int_5 = 1/(1 + exp(-log_odds_5))
+
+prob_int_4
+prob_int_5
+
+pred <- predict(binomial, type = "response")
+df_logit %>% select(studies_interest)
+pred[1]
+pred[3]
+head(pred)
+binomial$fitted.values
+
+df_logit$pred <- pred
+df_logit %>% 
+  select(studies_interest, pred)
+
+# converting the log odds to odds ratio
+exp(binomial$coefficients)
+exp(coef(binomial))
+exp(cbind(OR = coef(binomial), confint(binomial)))
+
+# easier way
+library(broom)
+odds_ratio <- tidy(binomial, exponentiate = TRUE, conf.int = TRUE)
+odds_ratio
+
+# final model fit statistics table
+tab_logistic <- bind_cols(log_odds, odds_ratio)
+tab_logistic %>% 
+  select(term...1, estimate...2, std.error...3, statistic...4,
+         estimate...9, conf.low...13, conf.high...14, p.value...5) %>% 
+  rename(Covariates = term...1,
+         log_odds = estimate...2,
+         SE = std.error...3,
+         Statistics = statistic...4,
+         OR = estimate...9,
+         CI_lower = conf.low...13, 
+         CI_upper = conf.high...14,
+         P_value = p.value...5)
+
+```
+
+#### How to interpret logistic regression: 
+
+# A tibble: 2 × 8
+  Covariates       log_odds    SE Statistics      OR CI_lower CI_upper    P_value
+  <chr>               <dbl> <dbl>      <dbl>   <dbl>    <dbl>    <dbl>      <dbl>
+1 (Intercept)         -5.97 1.45       -4.11 0.00256 0.000107   0.0336 0.0000397 
+2 studies_interest     1.70 0.385       4.42 5.48    2.77      12.7    0.00000969
+
+* For one unit increase in the participants' interest in studies, the odds of intending to participate increase by 5.48 times (or by a factor of 5.48 )  
+
+
+-   Odds Ratio = exp (coefficient) = exp(1.7020) = 5.484906
+
+    -   If Odds Ratio > 2, then, positive relationship -->
+        -   the odds of participation increases by (OR) times
+    -   If Odds Ratio > 1 but less than 2, then, positive relationship -->
+        -   The odds of participation increases by (OR -1)%
+    -   If Odds Ratio < 1, then, negative relationship -->
+        -   The odds of participation decreases by (1 - OR)%
+
+-   OR (participation) = 5.48: One unit increase in studies_interest will lead to 5.48 times increase in odds of participation.
+
+-   OR (Not participation) = 1/5.48 = 0.18; One unit increase in studies_interest will lead to 82% (1-0.18) decrease in the odds of No participation.
+
+-   Effect size of OR
+
+    -   Less than 1
+        -   small = .8
+        -   medium = .4
+        -   large = .2
+    -   Great than 1
+        -   small = 1.2
+        -   medium = 2.5
+        -   large = 4.3
+
+-   Model fit: Classification table
+
+
+#### Visualizing probabilities
+
+```{r}
+df_logit %>% 
+  ggplot(aes(studies_interest, part_intentions_3_di)) +
+  geom_jitter(height = 0.05, alpha = 0.5) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              se = FALSE)
+
+# probabilities vs. predictor
+
+df_logit %>% 
+  ggplot(aes(studies_interest, pred)) +
+  geom_jitter(height = 0.05, alpha = 0.5) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              se = FALSE)
+
+# proportions vs. predictor
+df_logit %>% 
+  group_by(studies_interest) %>% 
+  summarise(part_int_prop = mean(part_intentions_3_di)) %>% 
+  ggplot(aes(studies_interest, part_int_prop)) +
+  geom_jitter(height = 0.05) +
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              se = FALSE)
+```
+
+#### Assumptions of Logistic Regression
+
+-   Assumptions of logistic regression
+
+    1.  Cases are randomly sampled
+    2.  data free of bivariate/multivariate outliers
+    3.  outcome variable is dichotomous.
+    4.  association between continuous predictor and the logit transformation of the outcome variable is linear.
+
+    -   Box-Tidwell Test:
+        -   Part 1/2: <https://www.youtube.com/watch?v=sciPFNcYqi8>
+        -   Part 2/2: <https://www.youtube.com/watch?v=SEme9IuOqK0&t=26s>
+    -   Plot of Log odds against predictors
+
+    5.  free of collinearity
+ 
+```{r}
+#binary logistic regression
+library(lessR)
+
+df_logit %>% 
+  Logit(part_intentions_3_di ~ studies_interest, data = .)
+
+
+# Randomly sampled: met
+# outcome dichotomous: met
+# free of outliers: row number 23: Respondent ID = R_2cBq3KcPB34wjso
+
+# Association between continuous pred & logit transformation of the outcome
+# is linear: 
+# Box-Tidwell Test: look for signficant interaction term between the predictor and log(predictor): Significant interaction means nonlinearity.
+df_logit %>% 
+  Logit(part_intentions_3_di ~ studies_interest + 
+          studies_interest:log(studies_interest),
+        data = .) # linearity assumption is met
+  
+df_logit %>% 
+  Logit(part_intentions_3_di ~ help_unst_g_mr_condt + 
+          help_unst_g_mr_condt:log(help_unst_g_mr_condt),
+        data = .) # linearity assumption is NOT met
+
+```
+ 
+* conclusion:
+  + Linearity of the logit assumption is not violated for studies_interest.
+  + Linearity of the logit assumption may be violated for help_unst_g_mr_condt.
+ 
+##### Linearity assumption Test by use of plots
+ 
+```{r}
+df_logit_linear <- df_logit %>% 
+  select(pred, studies_interest, help_unst_g_mr_condt) %>% 
+  pivot_longer(-pred)
+
+df_logit_linear %>% 
+  ggplot(aes(value, pred, color = name)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  facet_wrap(~ name, scales = "free_y") +
+  theme(legend.position = "none")
+```
+
+
+### Multiple Binary Logistic Regression
+
+```{r}
+df_logit <- df_logit %>% 
+  mutate(incent_type = haven::as_factor(incent_type),
+         rp_motive = haven::as_factor(rp_motive),
+         gender = haven::as_factor(gender))
+fit_logit_mul <- df_logit %>% 
+  glm(part_intentions_3_di ~ incent_type + studies_interest +
+        rp_motive + help_unst_g_mr_condt + gender,
+      data = .,
+      family = binomial(link = 'logit'))
+
+summary(fit_logit_mul)
+
+library(lessR)
+
+df_logit %>% 
+  Logit(part_intentions_3_di ~ incent_type + studies_interest +
+        rp_motive + help_unst_g_mr_condt + gender,
+        data = .)
+
+# Randomly sampled: met
+# outcome dichotomous: met
+# free of multivariate outliers: 
+#   row number 43: Response ID = R_3oYo6NjzhsNBVfK
+#   row number 23: Response ID = R_2cBq3KcPB34wjso
+# free of collinearity: met
+car::vif(fit_logit_mul)
+
+# Association between continuous pred & logit transformation of the outcome
+# is linear 
+# Box-Tidwell Test: look for signficant interaction term between the predictor and log(predictor): Significant interaction means nonlinearity.
+
+df_logit %>% 
+  Logit(part_intentions_3_di ~ studies_interest + incent_type +
+          studies_interest:log(studies_interest) + 
+          rp_motive + help_unst_g_mr_condt + gender +
+          help_unst_g_mr_condt:log(help_unst_g_mr_condt), 
+        data = .,
+        rows = (!response_id %in% c("R_3oYo6NjzhsNBVfK",
+                                    "R_2cBq3KcPB34wjso")))
+
+df_logit %>% 
+  Logit(part_intentions_3_di ~ studies_interest + incent_type +
+          rp_motive + help_unst_g_mr_condt + gender,
+        data = .,
+        rows = (!response_id %in% c("R_3oYo6NjzhsNBVfK",
+                                    "R_2cBq3KcPB34wjso")))
+exp(0.9476) # OR = 2.5795
+```
+
+- *Conclusion*: The outcome of Multiple regression is the same as that of multiple binary logistic regression in that only two IV's -- (1) studies interest and (2) research participation helps understand how good marketing research is conducted -- significantly influence participation intentions.
+ 
+-   Youtube: <https://www.youtube.com/watch?v=dmiB-qgOink&t=1451s>
+
+
+## RQ 2: How would participants' perception of value in participation explain their attitudes toward participation in the studies? **Ally**
+  
+```{r }
+
+```
+  
+  
+  
+## RQ 3: Would academic characteristics (e.g., overall GPA, class grade, college/majors, credit_earned) of participants influence their perception of value of participation? **Ethan**
+  
+
+```{r }
+
+```
+
+## RQ 4: How do individual characteristics (e.g., studies_sincerity, studies_interest) affect the value of participation? **Maddie** 
+  
+```{r }
+
+```
+
+## RQ 5: Would demographic characteristics of the participants influence their attitudes towards participation? **Alyson**
+  
+```{r }
+
+```
+
+## RQ 6: Do students with higher GPAs show a greater inclination to participate in research studies compared to those with lower GPAs? **George**
+ 
+```{r}
+
+```
+
+
+# Appendix
+
+```{r, eval=FALSE}
+df <- df |> 
+  rename(aff_college = q2_5,
+         aff_major = q2_6)
+
+df |> count(aff_college)
+df |> count(aff_major, sort = TRUE)
+
+```
+
+```{r, eval=FALSE}
+#create data frame
+t1 <- data.frame(team=c('A', 'A', 'A', 'A', 'B', 'B', 'B', 'B'),
+                 position=c('G', 'G', 'F', 'C', 'G', 'F', 'F', 'C'),
+                 points=c(7, 7, 8, 11, 13, 15, 19, 13))
+
+#view data frame
+t1
+
+#produce crosstab 
+t1 %>%
+  group_by(team, position) %>%
+  tally() %>%
+  spread(team, n)
+
+t1 %>%
+  group_by(team, position) %>%
+  tally() %>%
+  pivot_wider(names_from = team, values_from = n)
+
+```
+
+## mtcars data
+
+```{r, eval=FALSE}
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point()
+
+mtcars %>% 
+  lm(mpg ~ wt, data = .) %>% 
+  summary() %>% 
+  tidy()
+
+mtcars %>% 
+  lm(mpg ~ wt + vs, data = .) %>% 
+  summary() %>% 
+  tidy()
+
+## generate the dataset
+set.seed(34) 
+soda_ounces <- rnorm(100, mean = 12, sd = 0.04)
+head(soda_ounces)
+
+## check for normality
+ggplot(as.data.frame(soda_ounces))+
+  geom_histogram(aes(soda_ounces), bins = 10)
+
+## carry out One group t-test
+t.test(soda_ounces, mu = 12)
+
+# from linear regression
+regression_output <-  lm(soda_ounces ~ 1)
+summary(regression_output)
+
+# calculate confidence interval
+confint(regression_output)
+```
